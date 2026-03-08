@@ -65,6 +65,35 @@
             </div>
         </section>
 
+        <section class="launch-section">
+            <div class="launch-header">
+                <h2>Launch Pipe</h2>
+                <p>Publicera en ny app direkt till VPS:en</p>
+            </div>
+            <div class="launch-grid">
+                <div class="launch-form glass">
+                    <div class="input-group">
+                        <label>Lokal Sökväg</label>
+                        <input type="text" id="deploy-dir" placeholder="C:\Users\...\MittProjekt">
+                    </div>
+                    <div class="input-group">
+                        <label>Projektnamn</label>
+                        <input type="text" id="deploy-name" placeholder="mitt-projekt-v1">
+                    </div>
+                    <button id="btn-deploy" class="btn-primary">Starta Deployment 🚀</button>
+                </div>
+                <div class="launch-logs glass">
+                    <div class="logs-header">
+                        <span>Terminal Loggar</span>
+                        <button id="btn-clear-logs">Rensa</button>
+                    </div>
+                    <div id="deploy-logs" class="logs-content">
+                        Väntar på start...
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="projects-section">
             <h2>Dina Projekt</h2>
             <div class="project-grid" id="project-grid">

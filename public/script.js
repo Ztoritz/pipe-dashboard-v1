@@ -87,6 +87,67 @@ function updateProjects(apps) {
     }).join('');
 }
 
+// Deployment Logik
+const btnDeploy = document.getElementById('btn-deploy');
+const btnClearLogs = document.getElementById('btn-clear-logs');
+const logContainer = document.getElementById('deploy-logs');
+const inputDir = document.getElementById('deploy-dir');
+const inputName = document.getElementById('deploy-name');
+
+btnDeploy.addEventListener('click', () => {
+    const dir = inputDir.value.trim();
+    const name = inputName.value.trim();
+
+    if (!dir || !name) {
+        alert("Vänligen fyll i både sökväg och projektnamn.");
+        return;
+    }
+
+    // Inaktivera knapp under processen
+    btnDeploy.disabled = true;
+    btnDeploy.innerText = "Deployar... ⏳";
+    logContainer.innerHTML = `🚀 Startar deployment för ${name}...\n\n`;
+
+    // Starta SSE (Server-Sent Events)
+    const eventSource = new EventSource(`/api/deploy?dir=${encodeURIComponent(dir)}&name=${encodeURIComponent(name)}`);
+
+    eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        // Lägg till logg-rad
+        const line = document.createElement('div');
+        line.textContent = data.message;
+        logContainer.appendChild(line);
+
+        // Scrolla till botten
+        logContainer.scrollTop = logContainer.scrollHeight;
+
+        if (data.done) {
+            eventSource.close();
+            btnDeploy.disabled = false;
+            btnDeploy.innerText = "Starta Deployment 🚀";
+            // Uppdatera projektlistan efter en liten stund
+            setTimeout(fetchStatus, 5000);
+        }
+    };
+
+    eventSource.onerror = (err) => {
+        console.error("SSE Error:", err);
+        const line = document.createElement('div');
+        line.style.color = "#FF0055";
+        line.textContent = "\n❌ Ett anslutningsfel uppstod under logg-strömningen.";
+        logContainer.appendChild(line);
+
+        eventSource.close();
+        btnDeploy.disabled = false;
+        btnDeploy.innerText = "Starta Deployment 🚀";
+    };
+});
+
+btnClearLogs.addEventListener('click', () => {
+    logContainer.innerHTML = "Väntar på start...";
+});
+
 // Initial hämtning
 fetchStatus();
 

@@ -3,13 +3,58 @@ const axios = require('axios');
 const cors = require('cors');
 const os = require('os');
 const osUtils = require('os-utils');
+const { spawn } = require('child_process');
+const path = require('path');
 require('dotenv').config({ path: '../.env' }); // Använd den gemensamma .env filen
 
 const app = express();
 const PORT = process.env.PORT || 2003;
 
 app.use(cors());
+app.use(express.json());
 app.use(express.static('public'));
+
+// Endpoint för att starta deployment och streama loggar via Server-Sent Events (SSE)
+app.get('/api/deploy', (req, res) => {
+    const { dir, name } = req.query;
+
+    if (!dir || !name) {
+        return res.status(400).json({ error: "Saknar dir eller name" });
+    }
+
+    // Sätt upp SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const sendLog = (data) => {
+        const lines = data.toString().split('\n');
+        lines.forEach(line => {
+            if (line.trim()) {
+                res.write(`data: ${JSON.stringify({ message: line })}\n\n`);
+            }
+        });
+    };
+
+    const deployScriptPath = path.join(__dirname, '..', 'deploy.js');
+    console.log(`Starting deploy: node ${deployScriptPath} --dir ${dir} --name ${name}`);
+
+    // Kör deploy.js
+    const child = spawn('node', [deployScriptPath, '--dir', dir, '--name', name]);
+
+    child.stdout.on('data', sendLog);
+    child.stderr.on('data', sendLog);
+
+    child.on('close', (code) => {
+        res.write(`data: ${JSON.stringify({ message: `\n✅ Processen avslutades med kod: ${code}`, done: true })}\n\n`);
+        res.end();
+    });
+
+    child.on('error', (err) => {
+        res.write(`data: ${JSON.stringify({ message: `❌ Fel vid start av process: ${err.message}`, done: true })}\n\n`);
+        res.end();
+    });
+});
 
 // Helper för att hämta CPU-användning
 const getCpuUsage = () => {
