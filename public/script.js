@@ -3,7 +3,7 @@ async function fetchStatus() {
         const response = await fetch('/api/status');
         const data = await response.json();
 
-        updateServerInfo(data.server);
+        updateServerInfo(data);
         updateProjects(data.applications);
 
         document.getElementById('last-updated').innerText = `Senast uppdaterad: ${new Date().toLocaleTimeString()}`;
@@ -18,11 +18,38 @@ async function fetchStatus() {
     }
 }
 
-function updateServerInfo(server) {
-    if (!server) return;
+function updateServerInfo(data) {
+    if (!data.server && !data.stats) return;
 
-    document.getElementById('server-ip').innerText = server.ip || 'Localhost';
-    document.getElementById('server-time').innerText = new Date().toLocaleTimeString();
+    // Server IP & Time
+    if (data.server) {
+        document.getElementById('server-ip').innerText = data.server.ip || 'Localhost';
+    }
+
+    // Stats (RAM & CPU)
+    if (data.stats) {
+        const stats = data.stats;
+
+        // RAM
+        const ramBar = document.getElementById('ram-bar');
+        const ramText = document.getElementById('ram-text');
+        ramBar.style.width = `${stats.memory.percent}%`;
+        ramBar.style.backgroundColor = getBarColor(stats.memory.percent);
+        ramText.innerText = `${stats.memory.used} GB / ${stats.memory.total} GB (${stats.memory.percent}%)`;
+
+        // CPU
+        const cpuBar = document.getElementById('cpu-bar');
+        const cpuText = document.getElementById('cpu-text');
+        cpuBar.style.width = `${stats.cpu}%`;
+        cpuBar.style.backgroundColor = getBarColor(stats.cpu);
+        cpuText.innerText = `${stats.cpu} %`;
+    }
+}
+
+function getBarColor(percent) {
+    if (percent > 85) return '#FF0055'; // Red
+    if (percent > 60) return '#FFB800'; // Amber
+    return '#00FF85'; // Green
 }
 
 function updateProjects(apps) {
