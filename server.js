@@ -6,7 +6,7 @@ const osUtils = require('os-utils');
 require('dotenv').config({ path: '../.env' }); // Använd den gemensamma .env filen
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 2003;
 
 app.use(cors());
 app.use(express.static('public'));
